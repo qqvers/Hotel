@@ -1,8 +1,8 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace hotel_backend.API.Models
+namespace hotel_backend.API.Models.Domain
 {
-    public class Customer
+    public class Owner
     {
         [Required]
         public Guid Id { get; set; }
@@ -11,6 +11,7 @@ namespace hotel_backend.API.Models
         [EmailAddress]
         public string Email { get; set; }
         public string Password { get; set; }
-        public ICollection<Room>? Rooms {  get; set; }  
+        public ICollection<Room> Rooms { get; set; }
+        public ICollection<Customer>? Customers { get; set; }
     }
 }

@@ -1,4 +1,4 @@
-﻿using hotel_backend.API.Models;
+﻿using hotel_backend.API.Models.Domain;
 using Microsoft.EntityFrameworkCore;
 
 namespace hotel_backend.API.Data

@@ -1,6 +1,6 @@
 ﻿using hotel_backend.API.Data;
-using hotel_backend.API.DTO;
-using hotel_backend.API.Models;
+using hotel_backend.API.Models.Domain;
+using hotel_backend.API.Models.DTO;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -18,7 +18,7 @@ namespace hotel_backend.API.Controllers
             _hotelDbContext = hotelDbContext;
         }
 
-        [HttpGet]
+        [HttpGet("allrooms")]
         public async Task<IActionResult> GetAllRooms()
         {
             var rooms = await _hotelDbContext.Rooms.ToArrayAsync();
@@ -29,8 +29,7 @@ namespace hotel_backend.API.Controllers
             return Ok(rooms);
         }
 
-        [HttpGet]
-        [Route("{id:Guid}")]
+        [HttpGet("room/{id}")]
         public async Task<IActionResult> GetRoomById([FromRoute] Guid id)
         {
             var room = await _hotelDbContext.Rooms.FindAsync(id);
@@ -41,15 +40,15 @@ namespace hotel_backend.API.Controllers
             return Ok(room);
         }
 
-        [HttpPost]
-        public async Task<IActionResult> CreateRoom([FromBody] CreateRoomDto createRoomDto)
+        [HttpPost("createroom")]
+        public async Task<IActionResult> CreateRoom([FromBody] RoomDto roomDto)
         {
-            if (createRoomDto is null)
+            if (!ModelState.IsValid)
             {
-                return BadRequest("Body can not be null");
+                return BadRequest(ModelState);
             }
 
-            var ownerExists = await _hotelDbContext.Owners.AnyAsync(o => o.Id == createRoomDto.OwnerId);
+            var ownerExists = await _hotelDbContext.Owners.AnyAsync(o => o.Id == roomDto.OwnerId);
             if (!ownerExists)
             {
                 return NotFound("Owner with the provided ID does not exist.");
@@ -57,9 +56,9 @@ namespace hotel_backend.API.Controllers
 
             var room = new Room()
             {
-                Name = createRoomDto.Name,
-                Available = createRoomDto.Available,
-                OwnerId = createRoomDto.OwnerId,
+                Name = roomDto.Name,
+                Available = roomDto.Available,
+                OwnerId = roomDto.OwnerId,
             };
 
             await _hotelDbContext.Rooms.AddAsync(room);
@@ -69,8 +68,7 @@ namespace hotel_backend.API.Controllers
 
         }
 
-        [HttpDelete]
-        [Route("{id:Guid}")]
+        [HttpDelete("deleteroom/{id}")]
         public async Task<IActionResult> DeleteRoom([FromRoute] Guid id)
         {
             var room = await _hotelDbContext.Rooms.FindAsync(id);
@@ -83,5 +81,36 @@ namespace hotel_backend.API.Controllers
 
             return NoContent();
         }
+
+        [HttpPut("update/{id}")]
+        public async Task<IActionResult> UpdateRoom([FromBody] RoomDto roomDto, [FromRoute] Guid id)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            var ownerExists = await _hotelDbContext.Owners.AnyAsync(o => o.Id == roomDto.OwnerId);
+            if (!ownerExists)
+            {
+                return NotFound("Owner with the provided ID does not exist.");
+            }
+
+            var room = new Room()
+            {
+                Id = id,
+                Name = roomDto.Name,
+                Available = roomDto.Available,
+                OwnerId = roomDto.OwnerId,
+            };
+
+            _hotelDbContext.Rooms.Update(room);
+            await _hotelDbContext.SaveChangesAsync();
+
+            return Ok(room);
+
+        }
+
+
     }
 }

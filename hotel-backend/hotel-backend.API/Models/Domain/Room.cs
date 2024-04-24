@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace hotel_backend.API.Models
+namespace hotel_backend.API.Models.Domain
 {
     public class Room
     {
