@@ -49,7 +49,6 @@ namespace hotel_backend.API.Controllers
             _hotelDbContext.Owners.Add(owner);
             await _hotelDbContext.SaveChangesAsync();
 
-            //Zamien na 201
             return Ok();
         }
 
@@ -79,8 +78,8 @@ namespace hotel_backend.API.Controllers
             var claims = new List<Claim>
             {
                 new Claim(ClaimTypes.NameIdentifier, ownerInDatabase.Email),
-                new Claim(ClaimTypes.Name, ownerInDatabase.Name)
-
+                new Claim(ClaimTypes.Name, ownerInDatabase.Name),
+                new Claim("UserType", "Owner")
             };
 
             var creds = new SigningCredentials(loginKey, SecurityAlgorithms.HmacSha256);

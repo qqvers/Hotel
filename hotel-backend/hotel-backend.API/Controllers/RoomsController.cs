@@ -1,14 +1,17 @@
 ﻿using hotel_backend.API.Data;
 using hotel_backend.API.Models.Domain;
 using hotel_backend.API.Models.DTO;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Security.Claims;
 
 namespace hotel_backend.API.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize]
     public class RoomsController : ControllerBase
     {
         private readonly HotelDbContext _hotelDbContext;
@@ -19,6 +22,7 @@ namespace hotel_backend.API.Controllers
         }
 
         [HttpGet("allrooms")]
+        [AllowAnonymous]
         public async Task<IActionResult> GetAllRooms()
         {
             var rooms = await _hotelDbContext.Rooms.ToArrayAsync();
@@ -30,6 +34,7 @@ namespace hotel_backend.API.Controllers
         }
 
         [HttpGet("room/{id}")]
+        [AllowAnonymous]
         public async Task<IActionResult> GetRoomById([FromRoute] Guid id)
         {
             var room = await _hotelDbContext.Rooms.FindAsync(id);
@@ -41,6 +46,7 @@ namespace hotel_backend.API.Controllers
         }
 
         [HttpPost("createroom")]
+        [Authorize(Policy ="IsOwner")]
         public async Task<IActionResult> CreateRoom([FromBody] RoomDto roomDto)
         {
             if (!ModelState.IsValid)
@@ -69,6 +75,7 @@ namespace hotel_backend.API.Controllers
         }
 
         [HttpDelete("deleteroom/{id}")]
+        [Authorize(Policy = "IsOwner")]
         public async Task<IActionResult> DeleteRoom([FromRoute] Guid id)
         {
             var room = await _hotelDbContext.Rooms.FindAsync(id);
@@ -83,6 +90,7 @@ namespace hotel_backend.API.Controllers
         }
 
         [HttpPut("update/{id}")]
+        [Authorize(Policy = "IsOwner")]
         public async Task<IActionResult> UpdateRoom([FromBody] RoomDto roomDto, [FromRoute] Guid id)
         {
             if (!ModelState.IsValid)
@@ -109,6 +117,41 @@ namespace hotel_backend.API.Controllers
 
             return Ok(room);
 
+        }
+
+        [HttpPut("rentroom/{roomID}/{customerID}")]
+        [Authorize(Policy = "IsCustomer")]
+        public async Task<IActionResult> RentRoom([FromRoute] Guid roomID, [FromRoute] Guid customerID)
+        {
+            var room = await _hotelDbContext.Rooms.FindAsync(roomID);
+            if (room == null)
+            {
+                return NotFound("Room not found.");
+            }
+
+            if (!room.Available)
+            {
+                return BadRequest("Room is not available for rent.");
+            }
+
+
+            var customer = await _hotelDbContext.Customers
+                .Include(c => c.Rooms) 
+                .FirstOrDefaultAsync(c => c.Id == customerID);
+            if (customer is null)
+            {
+                return NotFound("Customer not found.");
+            }
+
+            room.Available = false; 
+            room.CustomerId = customerID;
+            customer.Rooms.Add(room);
+
+            _hotelDbContext.Rooms.Update(room);
+            _hotelDbContext.Customers.Update(customer);
+            await _hotelDbContext.SaveChangesAsync();
+
+            return Ok(new { Message = "Room rented successfully" });
         }
 
 

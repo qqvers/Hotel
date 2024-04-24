@@ -78,8 +78,8 @@ namespace hotel_backend.API.Controllers
             var claims = new List<Claim>
             {
                 new Claim(ClaimTypes.NameIdentifier, customerInDatabase.Email),
-                new Claim(ClaimTypes.Name, customerInDatabase.Name)
-
+                new Claim(ClaimTypes.Name, customerInDatabase.Name),
+                new Claim("UserType", "Customer")
             };
 
             var creds = new SigningCredentials(loginKey, SecurityAlgorithms.HmacSha256);
