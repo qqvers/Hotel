@@ -16,6 +16,17 @@ builder.Services.AddSwaggerGen();
 
 builder.Services.AddDbContext<HotelDbContext>(options => options.UseNpgsql(builder.Configuration.GetConnectionString("MyDb")));
 
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowSpecificOrigin",
+        policy =>
+        {
+            policy.WithOrigins("http://localhost:5173")
+                  .AllowAnyHeader()
+                  .AllowAnyMethod();
+        });
+});
+
 builder.Services.AddAuthorization(options =>
 {
     options.AddPolicy("IsOwner", policy =>
@@ -69,7 +80,10 @@ builder.Services.AddSwaggerGen(c =>
 
 
 
+
 var app = builder.Build();
+
+app.UseCors("AllowSpecificOrigin");
 
 if (app.Environment.IsDevelopment())
 {
