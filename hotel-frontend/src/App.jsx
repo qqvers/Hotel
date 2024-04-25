@@ -19,7 +19,8 @@ function App() {
         <Routes>
           <Route path="/" element={<HomePage />} />
           <Route path="/profile" element={<ProfilePage />} />
-          <Route path="/room/:roomID" element={<RoomPage />} />
+          <Route path="/room/" element={<RoomPage />} />
+          <Route path="/room/:roomId" element={<RoomPage />} />
           <Route
             path="/form/:action"
             element={<LoginSignupPage handleLogin={handleLogin} />}

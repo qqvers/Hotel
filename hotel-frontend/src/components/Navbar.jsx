@@ -4,8 +4,8 @@ import { jwtDecode } from "jwt-decode";
 
 const Navbar = ({ isLoggedIn, setIsLoggedIn }) => {
   const token = localStorage.getItem("token");
-  const decodedToken = jwtDecode(token);
-  const isOwner = decodedToken.UserType === "Owner";
+  const decodedToken = token && jwtDecode(token);
+  const isOwner = token && decodedToken.UserType === "Owner";
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -51,7 +51,7 @@ const Navbar = ({ isLoggedIn, setIsLoggedIn }) => {
 
           {isOwner && (
             <Link
-              to="/addroom"
+              to="/room"
               className="mr-8 flex h-8 cursor-pointer items-center justify-center rounded-md border-[1px] border-white p-2"
             >
               Add Room

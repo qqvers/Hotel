@@ -79,7 +79,8 @@ namespace hotel_backend.API.Controllers
             {
                 new Claim(ClaimTypes.NameIdentifier, ownerInDatabase.Email),
                 new Claim(ClaimTypes.Name, ownerInDatabase.Name),
-                new Claim("UserType", "Owner")
+                new Claim("UserType", "Owner"),
+                new Claim("Id", (ownerInDatabase.Id).ToString())
             };
 
             var creds = new SigningCredentials(loginKey, SecurityAlgorithms.HmacSha256);
@@ -98,7 +99,8 @@ namespace hotel_backend.API.Controllers
             {
                 token = tokenHandler.WriteToken(token),
                 expiration = token.ValidTo,
-                name = ownerInDatabase.Name 
+                name = ownerInDatabase.Name,
+                id = ownerInDatabase.Id
             });
         }
 

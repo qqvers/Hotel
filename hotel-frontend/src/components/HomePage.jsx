@@ -5,8 +5,8 @@ import { Link } from "react-router-dom";
 const HomePage = () => {
   const [rooms, setRooms] = useState([]);
   const token = localStorage.getItem("token");
-  const decodedToken = jwtDecode(token);
-  const isOwner = decodedToken.UserType === "Owner";
+  const decodedToken = token && jwtDecode(token);
+  const isOwner = token && decodedToken.UserType === "Owner";
 
   async function GetRooms() {
     try {
@@ -19,7 +19,9 @@ const HomePage = () => {
   }
 
   useEffect(() => {
-    GetRooms();
+    if (token) {
+      GetRooms();
+    }
   }, []);
 
   async function DeleteRoom(id) {
@@ -45,7 +47,7 @@ const HomePage = () => {
 
   return (
     <div className="grid h-fit w-full grid-cols-1 justify-items-center gap-12 pt-8 text-white md:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">
-      {rooms &&
+      {token &&
         rooms.map((room) => (
           <div
             key={room.id}
