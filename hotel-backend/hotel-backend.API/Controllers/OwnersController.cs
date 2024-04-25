@@ -1,6 +1,7 @@
 ﻿using hotel_backend.API.Data;
 using hotel_backend.API.Models.Domain;
 using hotel_backend.API.Models.DTO;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -16,6 +17,7 @@ namespace hotel_backend.API.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize]
     public class OwnersController : ControllerBase
     {
         private readonly HotelDbContext _hotelDbContext;
@@ -29,6 +31,7 @@ namespace hotel_backend.API.Controllers
 
 
         [HttpPost("signup/owner")]
+        [AllowAnonymous]
         public async Task<IActionResult> SignUp([FromBody] OwnerDto ownerDto)
         {
             if (!ModelState.IsValid)
@@ -43,6 +46,12 @@ namespace hotel_backend.API.Controllers
                 Password = ownerDto.Password,
                 Rooms = new List<Room>(),
             };
+
+            if (await _hotelDbContext.Owners.AnyAsync(o => o.Email == ownerDto.Email && o.Id != owner.Id))
+            {
+                return BadRequest("Email already in use by another owner");
+            }
+
             var passwordHasher = new PasswordHasher<Owner>();
             owner.Password = passwordHasher.HashPassword(owner, ownerDto.Password);
 
@@ -53,6 +62,7 @@ namespace hotel_backend.API.Controllers
         }
 
         [HttpPost("login/owner")]
+        [AllowAnonymous]
         public async Task<IActionResult> Login([FromBody] OwnerDto ownerDto)
         {
             if (!ModelState.IsValid)
@@ -103,6 +113,46 @@ namespace hotel_backend.API.Controllers
                 id = ownerInDatabase.Id
             });
         }
+
+        [HttpPut("update/owner/{id}")]
+        [Authorize(Policy = "IsOwner")]
+        public async Task<IActionResult> UpdateOwner(Guid id, [FromBody] OwnerDto updateOwnerDto)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            var owner = await _hotelDbContext.Owners.FindAsync(id);
+            if (owner == null)
+            {
+                return NotFound("Owner not found");
+            }
+
+            if (await _hotelDbContext.Owners.AnyAsync(o => o.Email == updateOwnerDto.Email && o.Id != id))
+            {
+                return BadRequest("Email already in use by another owner");
+            }
+
+            var passwordHasher = new PasswordHasher<Owner>();
+
+            owner.Name = updateOwnerDto.Name;
+            owner.Email = updateOwnerDto.Email;
+            owner.Password = passwordHasher.HashPassword(owner, updateOwnerDto.Password); 
+
+
+            _hotelDbContext.Owners.Update(owner);
+            await _hotelDbContext.SaveChangesAsync();
+
+            return Ok(new
+            {
+                message = "Owner profile updated successfully",
+                ownerId = owner.Id,
+                ownerName = owner.Name,
+                ownerEmail = owner.Email
+            });
+        }
+
 
     }
 }

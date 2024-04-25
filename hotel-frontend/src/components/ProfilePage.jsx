@@ -5,14 +5,37 @@ import { useState } from "react";
 const ProfilePage = () => {
   const token = localStorage.getItem("token");
   const decodedToken = jwtDecode(token);
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
+  const isOwner = token && decodedToken.UserType === "Owner";
+  const [name, setName] = useState(decodedToken.unique_name);
+  const [email, setEmail] = useState(decodedToken.nameid);
   const [password, setPassword] = useState("");
-  const [repeatPassword, setRepeatPassword] = useState("");
   const [fetchSucces, setFetchSuccess] = useState("");
 
   async function editHandler(event) {
     event.preventDefault();
+    const URL = isOwner
+      ? `https://localhost:7108/api/Owners/update/owner/${decodedToken.Id}`
+      : `https://localhost:7108/api/Customers/update/customer/${decodedToken.Id}`;
+    try {
+      const response = await fetch(URL, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          name: name,
+          email: email,
+          password: password,
+        }),
+      });
+      if (response.ok) {
+        setFetchSuccess("data fetched");
+      }
+    } catch (err) {
+      setFetchSuccess("data not fetched");
+      throw (err, "Failed to update profile");
+    }
   }
 
   return (
@@ -51,16 +74,6 @@ const ProfilePage = () => {
           onChange={(e) => setPassword(e.target.value)}
         />
 
-        <label htmlFor="password">Repeat Password</label>
-        <input
-          required
-          type="password"
-          placeholder="Repeat Password"
-          className="pl-1 text-black"
-          value={repeatPassword}
-          onChange={(e) => setRepeatPassword(e.target.value)}
-        />
-
         <button
           type="submit"
           className="mx-auto mt-4 w-fit rounded-md border-2 border-white px-4 py-1"
@@ -69,7 +82,7 @@ const ProfilePage = () => {
         </button>
 
         <p>
-          {fetchSucces === "data fetched" && "Account created"}
+          {fetchSucces === "data fetched" && "Profile updated successfully"}
           {fetchSucces === "data not fetched" &&
             "Some error occured, data not fetched"}
         </p>

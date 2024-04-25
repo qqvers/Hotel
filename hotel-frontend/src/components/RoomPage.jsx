@@ -10,7 +10,6 @@ const RoomPage = () => {
   const [name, setName] = useState("");
   const [fetchSucces, setFetchSuccess] = useState("");
   const { roomId } = useParams();
-  console.log(decodedToken.Id);
 
   async function AddRoom(event) {
     event.preventDefault();

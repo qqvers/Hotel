@@ -14,7 +14,7 @@ function App() {
 
   return (
     <Router>
-      <div className="h-[1920px] w-screen bg-black">
+      <div className="h-[1920px] w-full bg-black">
         <Navbar isLoggedIn={isLoggedIn} setIsLoggedIn={setIsLoggedIn} />
         <Routes>
           <Route path="/" element={<HomePage />} />
