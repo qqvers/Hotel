@@ -30,6 +30,13 @@ namespace hotel_backend.API.Controllers
         private readonly SymmetricSecurityKey loginKey = new SymmetricSecurityKey(Encoding.ASCII.GetBytes(SecretKey));
 
 
+        /// <summary>
+        /// Signs up a new owner.
+        /// </summary>
+        /// <param name="ownerDto">The data transfer object containing the owner's sign-up information.</param>
+        /// <returns>A success message if the registration was successful.</returns>
+        /// <response code="200">Owner added successfully.</response>
+        /// <response code="400">If the owner's details are invalid or the email is already in use.</response>
         [HttpPost("signup/owner")]
         [AllowAnonymous]
         public async Task<IActionResult> SignUp([FromBody] OwnerDto ownerDto)
@@ -61,6 +68,15 @@ namespace hotel_backend.API.Controllers
             return Ok();
         }
 
+
+        /// <summary>
+        /// Authenticates an owner and returns a JWT token.
+        /// </summary>
+        /// <param name="ownerDto">The data transfer object for the owner's login credentials.</param>
+        /// <returns>A JWT token if the authentication was successful.</returns>
+        /// <response code="200">Authentication successful, token provided.</response>
+        /// <response code="401">If the login credentials are incorrect.</response>
+        /// <response code="404">If the email does not exist in the database.</response>
         [HttpPost("login/owner")]
         [AllowAnonymous]
         public async Task<IActionResult> Login([FromBody] OwnerDto ownerDto)
@@ -114,6 +130,16 @@ namespace hotel_backend.API.Controllers
             });
         }
 
+
+        /// <summary>
+        /// Updates an existing owner's profile information.
+        /// </summary>
+        /// <param name="id">The unique identifier of the owner.</param>
+        /// <param name="updateOwnerDto">The data transfer object containing the owner's updated information.</param>
+        /// <returns>A success message if the update was successful.</returns>
+        /// <response code="200">Owner profile updated successfully.</response>
+        /// <response code="400">If the new details are invalid or the email is already in use.</response>
+        /// <response code="404">If the owner with the given ID was not found.</response>
         [HttpPut("update/owner/{id}")]
         [Authorize(Policy = "IsOwner")]
         public async Task<IActionResult> UpdateOwner(Guid id, [FromBody] OwnerDto updateOwnerDto)
