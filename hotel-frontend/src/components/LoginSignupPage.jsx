@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 
-const LoginSignupPage = () => {
+const LoginSignupPage = ({ handleLogin }) => {
   const { action } = useParams();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -44,6 +44,7 @@ const LoginSignupPage = () => {
       if (action === "login") {
         const data = await response.json();
         localStorage.setItem("token", data.token);
+        handleLogin();
         navigate("/");
       }
     } catch (err) {
@@ -114,7 +115,7 @@ const LoginSignupPage = () => {
         <p>
           {fetchSucces === "data fetched" && "Account created"}
           {fetchSucces === "data not fetched" &&
-            "Some error occured, account not created"}
+            "Some error occured, data not fetched"}
         </p>
       </form>
     </div>
