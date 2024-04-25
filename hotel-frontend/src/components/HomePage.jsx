@@ -45,6 +45,29 @@ const HomePage = () => {
     }
   }
 
+  async function RentRoom(id) {
+    try {
+      const response = await fetch(
+        `https://localhost:7108/api/Rooms/rentroom/${id}/${decodedToken.Id}`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        },
+      );
+
+      if (!response.ok) {
+        throw (err, "Bad response from server");
+      }
+
+      GetRooms();
+    } catch (err) {
+      throw (err, "Failed to rent room");
+    }
+  }
+
   return (
     <div className="grid h-fit w-full grid-cols-1 justify-items-center gap-12 pt-8 text-white md:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">
       {token &&
@@ -71,7 +94,10 @@ const HomePage = () => {
                   </button>
                 </>
               ) : (
-                <button className="mx-1 rounded-full border-2 border-white p-2">
+                <button
+                  className="mx-1 rounded-full border-2 border-white p-2"
+                  onClick={() => RentRoom(room.id)}
+                >
                   Rent
                 </button>
               )}

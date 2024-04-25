@@ -151,7 +151,7 @@ namespace hotel_backend.API.Controllers
             _hotelDbContext.Customers.Update(customer);
             await _hotelDbContext.SaveChangesAsync();
 
-            return Ok(new { Message = "Room rented successfully" });
+            return Ok();
         }
 
 
