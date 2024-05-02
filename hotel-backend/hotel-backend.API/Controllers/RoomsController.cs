@@ -1,4 +1,5 @@
 ﻿using hotel_backend.API.Data;
+using hotel_backend.API.Data.Interfaces;
 using hotel_backend.API.Models.Domain;
 using hotel_backend.API.Models.DTO;
 using Microsoft.AspNetCore.Authorization;
@@ -14,11 +15,11 @@ namespace hotel_backend.API.Controllers
     [Authorize]
     public class RoomsController : ControllerBase
     {
-        private readonly HotelDbContext _hotelDbContext;
+        private readonly IRoomRepository _roomRepository;
 
-        public RoomsController(HotelDbContext hotelDbContext)
+        public RoomsController(IRoomRepository roomRepository)
         {
-            _hotelDbContext = hotelDbContext;
+            _roomRepository = roomRepository;
         }
 
 
@@ -32,8 +33,8 @@ namespace hotel_backend.API.Controllers
         [AllowAnonymous]
         public async Task<IActionResult> GetAllRooms()
         {
-            var rooms = await _hotelDbContext.Rooms.ToArrayAsync();
-            if (rooms.Length == 0)
+            var rooms = await _roomRepository.GetAllRoomsAsync();
+            if (rooms == null)
             {
                 return NoContent();
             }
@@ -49,10 +50,10 @@ namespace hotel_backend.API.Controllers
         /// <response code="404">If the room is not found.</response>
         [HttpGet("room/{id}")]
         [AllowAnonymous]
-        public async Task<IActionResult> GetRoomById([FromRoute] Guid id)
+        public async Task<IActionResult> GetRoomById(Guid id)
         {
-            var room = await _hotelDbContext.Rooms.FindAsync(id);
-            if (room is null)
+            var room = await _roomRepository.GetRoomByIdAsync(id);
+            if (room == null)
             {
                 return NotFound();
             }
@@ -66,7 +67,7 @@ namespace hotel_backend.API.Controllers
         /// <returns>A newly created room.</returns>
         /// <response code="201">Returns the newly created room.</response>
         /// <response code="400">If the room's details are invalid.</response>
-        /// <response code="404">If the owner is not found.</response>
+        /// <response code="403">If user is unauthorized.</response>
         [HttpPost("createroom")]
         [Authorize(Policy ="IsOwner")]
         public async Task<IActionResult> CreateRoom([FromBody] RoomDto roomDto)
@@ -75,25 +76,8 @@ namespace hotel_backend.API.Controllers
             {
                 return BadRequest(ModelState);
             }
-
-            var ownerExists = await _hotelDbContext.Owners.AnyAsync(o => o.Id == roomDto.OwnerId);
-            if (!ownerExists)
-            {
-                return NotFound("Owner with the provided ID does not exist.");
-            }
-
-            var room = new Room()
-            {
-                Name = roomDto.Name,
-                Available = roomDto.Available,
-                OwnerId = roomDto.OwnerId,
-            };
-
-            await _hotelDbContext.Rooms.AddAsync(room);
-            await _hotelDbContext.SaveChangesAsync();
-
-            return CreatedAtAction(nameof(GetRoomById), new { id = room.Id }, room);
-
+            var createdRoom = await _roomRepository.AddRoomAsync(roomDto);
+            return CreatedAtAction(nameof(GetRoomById), new { id = createdRoom.Id }, createdRoom);
         }
 
 
@@ -106,16 +90,13 @@ namespace hotel_backend.API.Controllers
         /// <response code="404">If the room is not found.</response>
         [HttpDelete("deleteroom/{id}")]
         [Authorize(Policy = "IsOwner")]
-        public async Task<IActionResult> DeleteRoom([FromRoute] Guid id)
+        public async Task<IActionResult> DeleteRoom(Guid id)
         {
-            var room = await _hotelDbContext.Rooms.FindAsync(id);
-            if(room is null)
+            bool deleted = await _roomRepository.DeleteRoomAsync(id);
+            if (!deleted)
             {
                 return NotFound("Room with provided ID does not exist");
             }
-            _hotelDbContext.Rooms.Remove(room);
-            await _hotelDbContext.SaveChangesAsync();
-
             return NoContent();
         }
 
@@ -130,32 +111,19 @@ namespace hotel_backend.API.Controllers
         /// <response code="404">If the room or owner is not found.</response>
         [HttpPut("update/{id}")]
         [Authorize(Policy = "IsOwner")]
-        public async Task<IActionResult> UpdateRoom([FromBody] RoomDto roomDto, [FromRoute] Guid id)
+        public async Task<IActionResult> UpdateRoom([FromBody] RoomDto roomDto, Guid id)
         {
             if (!ModelState.IsValid)
             {
                 return BadRequest(ModelState);
             }
 
-            var ownerExists = await _hotelDbContext.Owners.AnyAsync(o => o.Id == roomDto.OwnerId);
-            if (!ownerExists)
+            bool updated = await _roomRepository.UpdateRoomAsync(id,roomDto);
+            if (!updated)
             {
-                return NotFound("Owner with the provided ID does not exist.");
+                return NotFound("Room with provided ID does not exist or could not be updated");
             }
-
-            var room = new Room()
-            {
-                Id = id,
-                Name = roomDto.Name,
-                Available = roomDto.Available,
-                OwnerId = roomDto.OwnerId,
-            };
-
-            _hotelDbContext.Rooms.Update(room);
-            await _hotelDbContext.SaveChangesAsync();
-
-            return Ok(room);
-
+            return Ok(updated);
         }
 
 
@@ -170,37 +138,14 @@ namespace hotel_backend.API.Controllers
         /// <response code="404">If the room or customer is not found.</response>
         [HttpPut("rentroom/{roomID}/{customerID}")]
         [Authorize(Policy = "IsCustomer")]
-        public async Task<IActionResult> RentRoom([FromRoute] Guid roomID, [FromRoute] Guid customerID)
+        public async Task<IActionResult> RentRoom(Guid roomID, Guid customerID)
         {
-            var room = await _hotelDbContext.Rooms.FindAsync(roomID);
-            if (room == null)
+            bool rented = await _roomRepository.RentRoomAsync(roomID, customerID);
+            if (!rented)
             {
-                return NotFound("Room not found.");
+                return BadRequest("Room not available for rent or customer/room not found");
             }
-
-            if (!room.Available)
-            {
-                return BadRequest("Room is not available for rent.");
-            }
-
-
-            var customer = await _hotelDbContext.Customers
-                .Include(c => c.Rooms) 
-                .FirstOrDefaultAsync(c => c.Id == customerID);
-            if (customer is null)
-            {
-                return NotFound("Customer not found.");
-            }
-
-            room.Available = false; 
-            room.CustomerId = customerID;
-            customer.Rooms.Add(room);
-
-            _hotelDbContext.Rooms.Update(room);
-            _hotelDbContext.Customers.Update(customer);
-            await _hotelDbContext.SaveChangesAsync();
-
-            return Ok();
+            return Ok("Room rented successfully");
         }
 
 

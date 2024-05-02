@@ -1,4 +1,5 @@
 ﻿using hotel_backend.API.Data;
+using hotel_backend.API.Data.Interfaces;
 using hotel_backend.API.Models.Domain;
 using hotel_backend.API.Models.DTO;
 using Microsoft.AspNetCore.Authorization;
@@ -20,10 +21,10 @@ namespace hotel_backend.API.Controllers
     [Authorize]
     public class CustomersController : ControllerBase
     {
-        private readonly HotelDbContext _hotelDbContext;
-        public CustomersController(HotelDbContext hotelDbContext)
+        private readonly ICustomerRepository _customerRepository;
+        public CustomersController(ICustomerRepository customerRepository)
         {
-            _hotelDbContext = hotelDbContext;
+            _customerRepository = customerRepository;
         }
 
         private const string SecretKey = "SecretKeySecretKeySecretKeySecretKey";
@@ -46,27 +47,19 @@ namespace hotel_backend.API.Controllers
                 return BadRequest(ModelState);
             }
 
-            var customer = new Customer()
+            try
             {
-                Name = customerDto.Name,
-                Email = customerDto.Email,
-                Password = customerDto.Password,
-            };
-
-
-            if (await _hotelDbContext.Customers.AnyAsync(o => o.Email == customerDto.Email && o.Id != customer.Id))
-            {
-                return BadRequest("Email already in use by another customer");
+                var customer = await _customerRepository.SignUpCustomer(customerDto);
+                return Ok(new { message = "User added successfully", userId = customer.Id });
             }
-
-            var passwordHasher = new PasswordHasher<Customer>();
-            customer.Password = passwordHasher.HashPassword(customer, customerDto.Password);
-
-            _hotelDbContext.Customers.Add(customer);
-            await _hotelDbContext.SaveChangesAsync();
-
-
-            return Ok("User added successfully");
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, "An error occurred while creating the user");
+            }
         }
 
         /// <summary>
@@ -86,15 +79,14 @@ namespace hotel_backend.API.Controllers
                 return BadRequest(ModelState);
             }
 
-            var customerInDatabase = await _hotelDbContext.Customers.SingleOrDefaultAsync(o => o.Email == customerDto.Email);
-
-            if (customerInDatabase == null)
+            var customer = await _customerRepository.LoginCustomer(customerDto);
+            if (customer == null)
             {
                 return NotFound("Provided email does not exist in database");
             }
 
             var passwordHasher = new PasswordHasher<Customer>();
-            var result = passwordHasher.VerifyHashedPassword(customerInDatabase, customerInDatabase.Password, customerDto.Password);
+            var result = passwordHasher.VerifyHashedPassword(customer, customer.Password, customerDto.Password);
 
             if (result == PasswordVerificationResult.Failed)
             {
@@ -103,10 +95,10 @@ namespace hotel_backend.API.Controllers
 
             var claims = new List<Claim>
             {
-                new Claim(ClaimTypes.NameIdentifier, customerInDatabase.Email),
-                new Claim(ClaimTypes.Name, customerInDatabase.Name),
+                new Claim(ClaimTypes.NameIdentifier, customer.Email),
+                new Claim(ClaimTypes.Name, customer.Name),
                 new Claim("UserType", "Customer"),
-                new Claim("Id", (customerInDatabase.Id).ToString())
+                new Claim("Id", customer.Id.ToString())
             };
 
             var creds = new SigningCredentials(loginKey, SecurityAlgorithms.HmacSha256);
@@ -125,8 +117,8 @@ namespace hotel_backend.API.Controllers
             {
                 token = tokenHandler.WriteToken(token),
                 expiration = token.ValidTo,
-                name = customerInDatabase.Name,
-                id = customerInDatabase.Id
+                name = customer.Name,
+                id = customer.Id
             });
         }
 
@@ -148,30 +140,27 @@ namespace hotel_backend.API.Controllers
                 return BadRequest(ModelState);
             }
 
-            var customer = await _hotelDbContext.Customers.FindAsync(id);
+            var customer = await _customerRepository.FindCustomerByIdAsync(id);
             if (customer == null)
             {
-                return NotFound("customer not found");
+                return NotFound("Customer not found.");
             }
 
-            if (await _hotelDbContext.Customers.AnyAsync(o => o.Email == customerDto.Email && o.Id != id))
+            if (await _customerRepository.CheckEmailExistenceAsync(id, customerDto.Email))
             {
-                return BadRequest("Email already in use by another customer");
+                return BadRequest("Email already in use by another customer.");
             }
 
             var passwordHasher = new PasswordHasher<Customer>();
-
             customer.Name = customerDto.Name;
             customer.Email = customerDto.Email;
             customer.Password = passwordHasher.HashPassword(customer, customerDto.Password);
 
-
-            _hotelDbContext.Customers.Update(customer);
-            await _hotelDbContext.SaveChangesAsync();
+            await _customerRepository.UpdateCustomerAsync(customer);
 
             return Ok(new
             {
-                message = "customer profile updated successfully",
+                message = "Customer profile updated successfully",
                 customerId = customer.Id,
                 customerName = customer.Name,
                 customerEmail = customer.Email

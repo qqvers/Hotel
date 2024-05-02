@@ -10,9 +10,9 @@ namespace hotel_backend.API.Data
             
         }
 
-        public DbSet<Customer> Customers { get; set; }
-        public DbSet<Owner> Owners { get; set; }
-        public DbSet<Room> Rooms { get; set; }
+        public virtual DbSet<Customer> Customers { get; set; }
+        public virtual DbSet<Owner> Owners { get; set; }
+        public virtual DbSet<Room> Rooms { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

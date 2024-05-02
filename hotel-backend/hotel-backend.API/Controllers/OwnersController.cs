@@ -1,4 +1,5 @@
 ﻿using hotel_backend.API.Data;
+using hotel_backend.API.Data.Interfaces;
 using hotel_backend.API.Models.Domain;
 using hotel_backend.API.Models.DTO;
 using Microsoft.AspNetCore.Authorization;
@@ -20,14 +21,16 @@ namespace hotel_backend.API.Controllers
     [Authorize]
     public class OwnersController : ControllerBase
     {
-        private readonly HotelDbContext _hotelDbContext;
-        public OwnersController(HotelDbContext hotelDbContext)
-        {
-            _hotelDbContext = hotelDbContext;
-        }
+        private readonly IOwnerRepository _ownerRepository;
+        private readonly IPasswordHasher<Owner> _passwordHasher;
+        private readonly SymmetricSecurityKey _loginKey;
 
-        private const string SecretKey = "SecretKeySecretKeySecretKeySecretKey";
-        private readonly SymmetricSecurityKey loginKey = new SymmetricSecurityKey(Encoding.ASCII.GetBytes(SecretKey));
+        public OwnersController(IOwnerRepository ownerRepository, IPasswordHasher<Owner> passwordHasher)
+        {
+            _ownerRepository = ownerRepository;
+            _passwordHasher = passwordHasher;
+            _loginKey = new SymmetricSecurityKey(Encoding.ASCII.GetBytes("SecretKeySecretKeySecretKeySecretKey"));
+        }
 
 
         /// <summary>
@@ -46,26 +49,15 @@ namespace hotel_backend.API.Controllers
                 return BadRequest(ModelState);
             }
 
-            var owner = new Owner()
+            try
             {
-                Name = ownerDto.Name,
-                Email = ownerDto.Email,
-                Password = ownerDto.Password,
-                Rooms = new List<Room>(),
-            };
-
-            if (await _hotelDbContext.Owners.AnyAsync(o => o.Email == ownerDto.Email && o.Id != owner.Id))
-            {
-                return BadRequest("Email already in use by another owner");
+                var owner = await _ownerRepository.SignUpOwnerAsync(ownerDto);
+                return Ok("Owner added successfully");
             }
-
-            var passwordHasher = new PasswordHasher<Owner>();
-            owner.Password = passwordHasher.HashPassword(owner, ownerDto.Password);
-
-            _hotelDbContext.Owners.Add(owner);
-            await _hotelDbContext.SaveChangesAsync();
-
-            return Ok();
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(ex.Message);
+            }
         }
 
 
@@ -81,40 +73,26 @@ namespace hotel_backend.API.Controllers
         [AllowAnonymous]
         public async Task<IActionResult> Login([FromBody] OwnerDto ownerDto)
         {
-            if (!ModelState.IsValid)
+            var owner = await _ownerRepository.AuthenticateOwnerAsync(ownerDto.Email, ownerDto.Password);
+            if (owner == null)
             {
-                return BadRequest(ModelState);
-            }
-
-            var ownerInDatabase = await _hotelDbContext.Owners
-                                     .SingleOrDefaultAsync(o => o.Email == ownerDto.Email); 
-            if (ownerInDatabase == null)
-            {
-                return NotFound("Provided email does not exist in database");
-            }
-
-            var passwordHasher = new PasswordHasher<Owner>();
-            var result = passwordHasher.VerifyHashedPassword(ownerInDatabase, ownerInDatabase.Password, ownerDto.Password);
-
-            if (result == PasswordVerificationResult.Failed)
-            {
-                return Unauthorized("Invalid credentials");
+                return NotFound("Provided email does not exist in database or invalid credentials");
             }
 
             var claims = new List<Claim>
             {
-                new Claim(ClaimTypes.NameIdentifier, ownerInDatabase.Email),
-                new Claim(ClaimTypes.Name, ownerInDatabase.Name),
+                new Claim(ClaimTypes.NameIdentifier, owner.Email),
+                new Claim(ClaimTypes.Name, owner.Name),
                 new Claim("UserType", "Owner"),
-                new Claim("Id", (ownerInDatabase.Id).ToString())
+                new Claim("Id", owner.Id.ToString())
             };
 
-            var creds = new SigningCredentials(loginKey, SecurityAlgorithms.HmacSha256);
+            var creds = new SigningCredentials(_loginKey, SecurityAlgorithms.HmacSha256);
 
             var tokenDescriptor = new SecurityTokenDescriptor
             {
                 Subject = new ClaimsIdentity(claims),
-                Expires = DateTime.UtcNow.AddDays(1), 
+                Expires = DateTime.UtcNow.AddDays(1),
                 SigningCredentials = creds
             };
 
@@ -125,8 +103,8 @@ namespace hotel_backend.API.Controllers
             {
                 token = tokenHandler.WriteToken(token),
                 expiration = token.ValidTo,
-                name = ownerInDatabase.Name,
-                id = ownerInDatabase.Id
+                name = owner.Name,
+                id = owner.Id
             });
         }
 
@@ -149,26 +127,22 @@ namespace hotel_backend.API.Controllers
                 return BadRequest(ModelState);
             }
 
-            var owner = await _hotelDbContext.Owners.FindAsync(id);
+            var owner = await _ownerRepository.FindOwnerByIdAsync(id);
             if (owner == null)
             {
                 return NotFound("Owner not found");
             }
 
-            if (await _hotelDbContext.Owners.AnyAsync(o => o.Email == updateOwnerDto.Email && o.Id != id))
+            if (await _ownerRepository.IsEmailInUseAsync(id, updateOwnerDto.Email))
             {
                 return BadRequest("Email already in use by another owner");
             }
 
-            var passwordHasher = new PasswordHasher<Owner>();
-
             owner.Name = updateOwnerDto.Name;
             owner.Email = updateOwnerDto.Email;
-            owner.Password = passwordHasher.HashPassword(owner, updateOwnerDto.Password); 
+            owner.Password = _passwordHasher.HashPassword(owner, updateOwnerDto.Password);
 
-
-            _hotelDbContext.Owners.Update(owner);
-            await _hotelDbContext.SaveChangesAsync();
+            await _ownerRepository.UpdateOwnerAsync(owner);
 
             return Ok(new
             {
