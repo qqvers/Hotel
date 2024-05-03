@@ -34,7 +34,7 @@ namespace hotel_backend.API.Controllers
         public async Task<IActionResult> GetAllRooms()
         {
             var rooms = await _roomRepository.GetAllRoomsAsync();
-            if (rooms == null)
+            if (!rooms.Any()) 
             {
                 return NoContent();
             }
