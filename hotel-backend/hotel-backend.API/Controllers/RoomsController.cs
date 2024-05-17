@@ -29,7 +29,7 @@ namespace hotel_backend.API.Controllers
         /// <returns>List of all rooms.</returns>
         /// <response code="200">Returns the list of all rooms.</response>
         /// <response code="204">If there are no rooms available.</response>
-        [HttpGet("allrooms")]
+        [HttpGet]
         [AllowAnonymous]
         public async Task<IActionResult> GetAllRooms()
         {
@@ -48,7 +48,7 @@ namespace hotel_backend.API.Controllers
         /// <returns>The requested room.</returns>
         /// <response code="200">Returns the requested room.</response>
         /// <response code="404">If the room is not found.</response>
-        [HttpGet("room/{id}")]
+        [HttpGet("{id}")]
         [AllowAnonymous]
         public async Task<IActionResult> GetRoomById(Guid id)
         {
@@ -68,7 +68,7 @@ namespace hotel_backend.API.Controllers
         /// <response code="201">Returns the newly created room.</response>
         /// <response code="400">If the room's details are invalid.</response>
         /// <response code="403">If user is unauthorized.</response>
-        [HttpPost("createroom")]
+        [HttpPost]
         [Authorize(Policy ="IsOwner")]
         public async Task<IActionResult> CreateRoom([FromBody] RoomDto roomDto)
         {
@@ -88,7 +88,7 @@ namespace hotel_backend.API.Controllers
         /// <returns>A confirmation message.</returns>
         /// <response code="204">If the room is successfully deleted.</response>
         /// <response code="404">If the room is not found.</response>
-        [HttpDelete("deleteroom/{id}")]
+        [HttpDelete("{id}")]
         [Authorize(Policy = "IsOwner")]
         public async Task<IActionResult> DeleteRoom(Guid id)
         {
@@ -109,7 +109,7 @@ namespace hotel_backend.API.Controllers
         /// <response code="200">Returns the updated room.</response>
         /// <response code="400">If the room's new details are invalid.</response>
         /// <response code="404">If the room or owner is not found.</response>
-        [HttpPut("update/{id}")]
+        [HttpPut("{id}")]
         [Authorize(Policy = "IsOwner")]
         public async Task<IActionResult> UpdateRoom([FromBody] RoomDto roomDto, Guid id)
         {
@@ -136,9 +136,9 @@ namespace hotel_backend.API.Controllers
         /// <response code="200">If the room is successfully rented to the customer.</response>
         /// <response code="400">If the room is not available for rent.</response>
         /// <response code="404">If the room or customer is not found.</response>
-        [HttpPut("rentroom/{roomID}/{customerID}")]
+        [HttpPut("{roomID}/rent/{customerID}")]
         [Authorize(Policy = "IsCustomer")]
-        public async Task<IActionResult> RentRoom(Guid roomID, Guid customerID)
+        public async Task<IActionResult> RentRoom([FromRoute] Guid roomID, [FromRoute] Guid customerID)
         {
             bool rented = await _roomRepository.RentRoomAsync(roomID, customerID);
             if (!rented)

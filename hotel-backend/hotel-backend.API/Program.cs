@@ -22,6 +22,7 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 builder.Services.AddDbContext<HotelDbContext>(options => options.UseNpgsql(builder.Configuration.GetConnectionString("MyDb")));
+builder.Services.AddRouting(options => options.LowercaseUrls = true);
 
 builder.Services.AddCors(options =>
 {

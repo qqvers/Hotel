@@ -38,7 +38,7 @@ namespace hotel_backend.API.Controllers
         /// <returns>A success message if the signup was successful.</returns>
         /// <response code="200">User added successfully.</response>
         /// <response code="400">If the customer's details are invalid or the email is already in use.</response>
-        [HttpPost("signup/customer")]
+        [HttpPost("signup")]
         [AllowAnonymous]
         public async Task<IActionResult> SignUpCustomer([FromBody] CustomerDto customerDto)
         {
@@ -70,7 +70,7 @@ namespace hotel_backend.API.Controllers
         /// <response code="200">Login successful, token generated.</response>
         /// <response code="401">If the login credentials are invalid.</response>
         /// <response code="404">If the email does not exist in the database.</response>
-        [HttpPost("login/customer")]
+        [HttpPost("login")]
         [AllowAnonymous]
         public async Task<IActionResult> LoginCustomer([FromBody] CustomerDto customerDto)
         {
@@ -131,7 +131,7 @@ namespace hotel_backend.API.Controllers
         /// <response code="200">Customer profile updated successfully.</response>
         /// <response code="400">If the customer's new details are invalid or the email is already in use.</response>
         /// <response code="404">If the customer with the given ID was not found.</response>
-        [HttpPut("update/customer/{id}")]
+        [HttpPut("{id}")]
         [Authorize(Policy = "IsCustomer")]
         public async Task<IActionResult> UpdateCustomer(Guid id, [FromBody] CustomerDto customerDto)
         {

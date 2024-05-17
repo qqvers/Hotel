@@ -40,7 +40,7 @@ namespace hotel_backend.API.Controllers
         /// <returns>A success message if the registration was successful.</returns>
         /// <response code="200">Owner added successfully.</response>
         /// <response code="400">If the owner's details are invalid or the email is already in use.</response>
-        [HttpPost("signup/owner")]
+        [HttpPost("signup")]
         [AllowAnonymous]
         public async Task<IActionResult> SignUp([FromBody] OwnerDto ownerDto)
         {
@@ -69,7 +69,7 @@ namespace hotel_backend.API.Controllers
         /// <response code="200">Authentication successful, token provided.</response>
         /// <response code="401">If the login credentials are incorrect.</response>
         /// <response code="404">If the email does not exist in the database.</response>
-        [HttpPost("login/owner")]
+        [HttpPost("login")]
         [AllowAnonymous]
         public async Task<IActionResult> Login([FromBody] OwnerDto ownerDto)
         {
@@ -118,7 +118,7 @@ namespace hotel_backend.API.Controllers
         /// <response code="200">Owner profile updated successfully.</response>
         /// <response code="400">If the new details are invalid or the email is already in use.</response>
         /// <response code="404">If the owner with the given ID was not found.</response>
-        [HttpPut("update/owner/{id}")]
+        [HttpPut("{id}")]
         [Authorize(Policy = "IsOwner")]
         public async Task<IActionResult> UpdateOwner(Guid id, [FromBody] OwnerDto updateOwnerDto)
         {
