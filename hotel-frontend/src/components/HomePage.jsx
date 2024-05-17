@@ -10,7 +10,7 @@ const HomePage = () => {
 
   async function GetRooms() {
     try {
-      const response = await fetch("https://localhost:7108/api/Rooms/allrooms");
+      const response = await fetch("https://localhost:7108/api/rooms");
       const data = await response.json();
       setRooms(data);
     } catch (err) {
@@ -26,16 +26,13 @@ const HomePage = () => {
 
   async function DeleteRoom(id) {
     try {
-      const response = await fetch(
-        `https://localhost:7108/api/Rooms/deleteroom/${id}`,
-        {
-          method: "DELETE",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
+      const response = await fetch(`https://localhost:7108/api/rooms/${id}`, {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
         },
-      );
+      });
       if (response.ok) {
         GetRooms();
       }
@@ -48,7 +45,7 @@ const HomePage = () => {
   async function RentRoom(id) {
     try {
       const response = await fetch(
-        `https://localhost:7108/api/Rooms/rentroom/${id}/${decodedToken.Id}`,
+        `https://localhost:7108/api/rooms/${id}/rent/${decodedToken.Id}`,
         {
           method: "PUT",
           headers: {

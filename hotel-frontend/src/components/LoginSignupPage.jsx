@@ -29,9 +29,9 @@ const LoginSignupPage = ({ handleLogin }) => {
         requestBody.Name = name;
       }
 
-      var endpointURL = isOwner ? "Owner" : "Customer";
+      var endpointURL = isOwner ? "owner" : "customer";
       const response = await fetch(
-        `https://localhost:7108/api/${endpointURL}s/${action}/${endpointURL}`,
+        `https://localhost:7108/api/${endpointURL}s/${action}`,
         {
           method: "POST",
           headers: {

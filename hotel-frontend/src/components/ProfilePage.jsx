@@ -14,8 +14,8 @@ const ProfilePage = () => {
   async function editHandler(event) {
     event.preventDefault();
     const URL = isOwner
-      ? `https://localhost:7108/api/Owners/update/owner/${decodedToken.Id}`
-      : `https://localhost:7108/api/Customers/update/customer/${decodedToken.Id}`;
+      ? `https://localhost:7108/api/owners/${decodedToken.Id}`
+      : `https://localhost:7108/api/customers/${decodedToken.Id}`;
     try {
       const response = await fetch(URL, {
         method: "PUT",

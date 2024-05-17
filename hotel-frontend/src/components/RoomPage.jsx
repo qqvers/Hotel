@@ -14,21 +14,18 @@ const RoomPage = () => {
   async function AddRoom(event) {
     event.preventDefault();
     try {
-      const response = await fetch(
-        "https://localhost:7108/api/Rooms/createroom",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({
-            name: name,
-            available: true,
-            ownerId: decodedToken.Id,
-          }),
+      const response = await fetch("https://localhost:7108/api/rooms", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
         },
-      );
+        body: JSON.stringify({
+          name: name,
+          available: true,
+          ownerId: decodedToken.Id,
+        }),
+      });
       if (response.ok) {
         setFetchSuccess("data fetched");
       }
@@ -41,7 +38,7 @@ const RoomPage = () => {
     event.preventDefault();
     try {
       const response = await fetch(
-        `https://localhost:7108/api/Rooms/update/${roomId}`,
+        `https://localhost:7108/api/rooms/${roomId}`,
         {
           method: "PUT",
           headers: {
