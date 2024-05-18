@@ -7,7 +7,7 @@ namespace hotel_backend.API.Data
     {
         public HotelDbContext(DbContextOptions<HotelDbContext> options) : base(options)
         {
-            
+
         }
 
         public virtual DbSet<Customer> Customers { get; set; }
@@ -17,13 +17,57 @@ namespace hotel_backend.API.Data
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder.Entity<Customer>()
-                .HasMany(c => c.Rooms)
-                .WithOne(r => r.Customer)
-                .HasForeignKey(r=>r.CustomerId);
+                .Property<DateTime>("CreatedDate");
+
+            modelBuilder.Entity<Customer>()
+                .Property<DateTime>("UpdatedDate");
+
+            modelBuilder.Entity<Owner>()
+                .Property<DateTime>("CreatedDate");
+
+            modelBuilder.Entity<Owner>()
+                .Property<DateTime>("UpdatedDate");
 
             modelBuilder.Entity<Room>()
-                .HasOne(r => r.Customer)
-                .WithMany(c => c.Rooms);
+                .Property<DateTime>("CreatedDate");
+
+            modelBuilder.Entity<Room>()
+                .Property<DateTime>("UpdatedDate");
+
+        }
+
+        public override int SaveChanges()
+        {
+            var entries = ChangeTracker.Entries()
+                .Where(e => e.State == EntityState.Added || e.State == EntityState.Modified);
+
+            foreach (var entry in entries)
+            {
+                if (entry.State == EntityState.Added)
+                {
+                    entry.Property("CreatedDate").CurrentValue = DateTime.UtcNow;
+                }
+                entry.Property("UpdatedDate").CurrentValue = DateTime.UtcNow;
+            }
+
+            return base.SaveChanges();
+        }
+
+        public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
+        {
+            var entries = ChangeTracker.Entries()
+                .Where(e => e.State == EntityState.Added || e.State == EntityState.Modified);
+
+            foreach (var entry in entries)
+            {
+                if (entry.State == EntityState.Added)
+                {
+                    entry.Property("CreatedDate").CurrentValue = DateTime.UtcNow;
+                }
+                entry.Property("UpdatedDate").CurrentValue = DateTime.UtcNow;
+            }
+
+            return base.SaveChangesAsync(cancellationToken);
         }
     }
 }
