@@ -20,6 +20,7 @@ builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+builder.Services.AddAutoMapper(Assembly.GetExecutingAssembly());
 
 builder.Services.AddDbContext<HotelDbContext>(options => options.UseNpgsql(builder.Configuration.GetConnectionString("MyDb")));
 builder.Services.AddRouting(options => options.LowercaseUrls = true);
@@ -64,7 +65,7 @@ builder.Services.AddSwaggerGen(c =>
     c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
         In = ParameterLocation.Header,
-        Description = "Proszê wprowadziæ s³owo 'Bearer' nastêpnie spacje i token JWT",
+        Description = "Please enter 'Bearer' followed by space and JWT token",
         Name = "Authorization",
         Type = SecuritySchemeType.ApiKey
     });
@@ -95,7 +96,12 @@ builder.Services.AddScoped<IPasswordHasher<Owner>, PasswordHasher<Owner>>();
 
 var app = builder.Build();
 
+app.UseHttpsRedirection();
+
 app.UseCors("AllowSpecificOrigin");
+
+app.UseAuthentication();
+app.UseAuthorization();
 
 if (app.Environment.IsDevelopment())
 {
@@ -114,10 +120,6 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
-
-app.UseHttpsRedirection();
-app.UseAuthentication();
-app.UseAuthorization();
 
 app.MapControllers();
 

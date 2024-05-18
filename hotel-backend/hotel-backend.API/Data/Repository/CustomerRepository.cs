@@ -1,4 +1,5 @@
-﻿using hotel_backend.API.Data.Interfaces;
+﻿using AutoMapper;
+using hotel_backend.API.Data.Interfaces;
 using hotel_backend.API.Models.Domain;
 using hotel_backend.API.Models.DTO;
 using Microsoft.AspNetCore.Identity;
@@ -11,9 +12,11 @@ namespace hotel_backend.API.Data.Repository
     public class CustomerRepository : ICustomerRepository
     {
         private readonly HotelDbContext _hotelDbContext;
-        public CustomerRepository(HotelDbContext hotelDbContext)
+        private readonly IMapper _mapper;
+        public CustomerRepository(HotelDbContext hotelDbContext, IMapper mapper)
         {
             _hotelDbContext = hotelDbContext;
+            _mapper = mapper;
         }
         private string HashPassword(string password)
         {
@@ -30,19 +33,18 @@ namespace hotel_backend.API.Data.Repository
                 throw new InvalidOperationException("Email already in use by another customer");
             }
 
-            var customer = new Customer
-            {
-                Name = customerDto.Name,
-                Email = customerDto.Email,
-                Password = HashPassword(customerDto.Password)
-            };
+
+            customerDto.Password = HashPassword(customerDto.Password);
+
+            var customer = _mapper.Map<Customer>(customerDto);
+
 
             _hotelDbContext.Customers.Add(customer);
             await _hotelDbContext.SaveChangesAsync();
             return customer;
         }
 
-        public async Task<Customer> LoginCustomer(CustomerDto customerDto)
+        public async Task<Customer> LoginCustomer(CustomerLoginDto customerDto)
         {
             var customer = await _hotelDbContext.Customers
                         .SingleOrDefaultAsync(o => o.Email == customerDto.Email);

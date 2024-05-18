@@ -1,4 +1,5 @@
-﻿using FakeItEasy;
+﻿using AutoMapper;
+using FakeItEasy;
 using hotel_backend.API.Controllers;
 using hotel_backend.API.Data.Interfaces;
 using hotel_backend.API.Models.Domain;
@@ -11,11 +12,13 @@ namespace hotel_backend.Tests.Controller
     {
         private readonly CustomersController _controller;
         private readonly ICustomerRepository _customerRepository;
+        private readonly IMapper _mapper;
 
         public CustomersControllerTests()
         {
             _customerRepository = A.Fake<ICustomerRepository>();
-            _controller = new CustomersController(_customerRepository);
+            _mapper = A.Fake<IMapper>();
+            _controller = new CustomersController(_customerRepository, _mapper);
         }
 
         [Fact]
@@ -66,8 +69,8 @@ namespace hotel_backend.Tests.Controller
             var result = await _controller.SignUpCustomer(customerDto);
 
             // Assert
-            var okResult = Assert.IsType<OkObjectResult>(result);
-            Assert.Contains("User added successfully", okResult.Value.ToString());
+            var createdResult = Assert.IsType<CreatedResult>(result);
+            Assert.Contains("User added successfully", createdResult.Value.ToString());
         }
 
         [Fact]

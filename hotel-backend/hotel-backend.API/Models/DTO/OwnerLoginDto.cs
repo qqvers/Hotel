@@ -2,10 +2,8 @@
 
 namespace hotel_backend.API.Models.DTO
 {
-    public class CustomerDto
+    public class OwnerLoginDto
     {
-        [Required]
-        public string Name { get; set; }
 
         [EmailAddress]
         [Required]

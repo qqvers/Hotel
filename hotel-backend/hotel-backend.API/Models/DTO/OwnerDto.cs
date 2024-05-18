@@ -1,15 +1,16 @@
-﻿using hotel_backend.API.Models.Domain;
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 
 namespace hotel_backend.API.Models.DTO
 {
     public class OwnerDto
     {
-        public string? Name { get; set; }
+        [Required]
+        public string Name { get; set; }
 
         [EmailAddress]
+        [Required]
         public string Email { get; set; }
+        [Required]
         public string Password { get; set; }
-
     }
 }

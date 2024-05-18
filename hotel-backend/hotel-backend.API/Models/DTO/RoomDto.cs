@@ -8,7 +8,6 @@ namespace hotel_backend.API.Models.DTO
         public string Name { get; set; }
         public bool Available { get; set; }
         public Guid OwnerId { get; set; }
-        public Guid? CustomerId { get; set; }
 
     }
 }

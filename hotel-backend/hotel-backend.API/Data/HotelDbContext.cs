@@ -21,9 +21,6 @@ namespace hotel_backend.API.Data
                 .WithOne(r => r.Customer)
                 .HasForeignKey(r=>r.CustomerId);
 
-            modelBuilder.Entity<Owner>()
-                .HasMany(o => o.Customers);
-
             modelBuilder.Entity<Room>()
                 .HasOne(r => r.Customer)
                 .WithMany(c => c.Rooms);

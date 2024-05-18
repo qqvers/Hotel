@@ -1,4 +1,5 @@
-﻿using hotel_backend.API.Models.Domain;
+﻿using AutoMapper;
+using hotel_backend.API.Models.Domain;
 using hotel_backend.API.Models.DTO;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -9,11 +10,13 @@ namespace hotel_backend.API.Data.Interfaces
     {
         private readonly HotelDbContext _hotelDbContext;
         private readonly IPasswordHasher<Owner> _passwordHasher;
+        private readonly IMapper _mapper;
 
-        public OwnerRepository(HotelDbContext hotelDbContext, IPasswordHasher<Owner> passwordHasher)
+        public OwnerRepository(HotelDbContext hotelDbContext, IPasswordHasher<Owner> passwordHasher, IMapper mapper)
         {
             _hotelDbContext = hotelDbContext;
             _passwordHasher = passwordHasher;
+            _mapper = mapper;
         }
 
         public async Task<Owner> SignUpOwnerAsync(OwnerDto ownerDto)
@@ -24,13 +27,7 @@ namespace hotel_backend.API.Data.Interfaces
                 throw new InvalidOperationException("Email already in use by another owner");
             }
 
-            var owner = new Owner
-            {
-                Name = ownerDto.Name,
-                Email = ownerDto.Email,
-                Password = _passwordHasher.HashPassword(null, ownerDto.Password),
-                Rooms = new List<Room>()
-            };
+            var owner = _mapper.Map<Owner>(ownerDto);
 
             _hotelDbContext.Owners.Add(owner);
             await _hotelDbContext.SaveChangesAsync();

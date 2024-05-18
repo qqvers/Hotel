@@ -1,4 +1,5 @@
-﻿using FakeItEasy;
+﻿using AutoMapper;
+using FakeItEasy;
 using hotel_backend.API.Controllers;
 using hotel_backend.API.Data.Interfaces;
 using hotel_backend.API.Models.Domain;
@@ -20,13 +21,15 @@ namespace hotel_backend.Tests.Controller
         private readonly IOwnerRepository _ownerRepository;
         private readonly IPasswordHasher<Owner> _passwordHasher;
         private readonly SymmetricSecurityKey _loginKey;
+        private readonly IMapper _mapper;
 
         public OwnersControllerTests()
         {
             _ownerRepository = A.Fake<IOwnerRepository>();
             _passwordHasher = A.Fake<IPasswordHasher<Owner>>();
             _loginKey = new SymmetricSecurityKey(Encoding.ASCII.GetBytes("SecretKeySecretKeySecretKeySecretKey"));
-            _controller = new OwnersController(_ownerRepository, _passwordHasher);
+            _mapper = A.Fake<IMapper>();
+            _controller = new OwnersController(_ownerRepository, _passwordHasher,_mapper);
         }
 
         [Fact]
@@ -42,8 +45,8 @@ namespace hotel_backend.Tests.Controller
             var result = await _controller.SignUp(ownerDto);
 
             // Assert
-            var okResult = Assert.IsType<OkObjectResult>(result);
-            Assert.Equal("Owner added successfully", okResult.Value);
+            var createdResult = Assert.IsType<CreatedResult>(result);
+            Assert.Contains("Owner added successfully", createdResult.Value.ToString());
         }
 
         [Fact]
@@ -67,7 +70,7 @@ namespace hotel_backend.Tests.Controller
         public async Task Login_ReturnsOk_WithToken_WhenCredentialsAreValid()
         {
             // Arrange
-            var ownerDto = new OwnerDto { Email = "john@example.com", Password = "password123" };
+            var ownerDto = new OwnerLoginDto { Email = "john@example.com", Password = "password123" };
             var owner = new Owner { Id = Guid.NewGuid(), Name = "John", Email = "john@example.com" };
 
             A.CallTo(() => _ownerRepository.AuthenticateOwnerAsync(ownerDto.Email, ownerDto.Password)).Returns(Task.FromResult(owner));
@@ -85,7 +88,7 @@ namespace hotel_backend.Tests.Controller
         public async Task Login_ReturnsNotFound_WhenCredentialsAreInvalid()
         {
             // Arrange
-            var ownerDto = new OwnerDto { Email = "john@example.com", Password = "wrongpassword" };
+            var ownerDto = new OwnerLoginDto { Email = "john@example.com", Password = "wrongpassword" };
 
             A.CallTo(() => _ownerRepository.AuthenticateOwnerAsync(ownerDto.Email, ownerDto.Password)).Returns(Task.FromResult<Owner>(null));
 

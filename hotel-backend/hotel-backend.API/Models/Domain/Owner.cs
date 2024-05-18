@@ -12,6 +12,5 @@ namespace hotel_backend.API.Models.Domain
         public string Email { get; set; }
         public string Password { get; set; }
         public ICollection<Room> Rooms { get; set; }
-        public ICollection<Customer>? Customers { get; set; }
     }
 }

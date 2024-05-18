@@ -1,4 +1,5 @@
-﻿using hotel_backend.API.Data;
+﻿using AutoMapper;
+using hotel_backend.API.Data;
 using hotel_backend.API.Data.Interfaces;
 using hotel_backend.API.Models.Domain;
 using hotel_backend.API.Models.DTO;

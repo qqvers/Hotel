@@ -1,4 +1,5 @@
-﻿using hotel_backend.API.Data;
+﻿using AutoMapper;
+using hotel_backend.API.Data;
 using hotel_backend.API.Data.Interfaces;
 using hotel_backend.API.Models.Domain;
 using hotel_backend.API.Models.DTO;
@@ -22,9 +23,11 @@ namespace hotel_backend.API.Controllers
     public class CustomersController : ControllerBase
     {
         private readonly ICustomerRepository _customerRepository;
-        public CustomersController(ICustomerRepository customerRepository)
+        private readonly IMapper _mapper;
+        public CustomersController(ICustomerRepository customerRepository, IMapper mapper)
         {
             _customerRepository = customerRepository;
+            _mapper = mapper;
         }
 
         private const string SecretKey = "SecretKeySecretKeySecretKeySecretKey";
@@ -36,7 +39,7 @@ namespace hotel_backend.API.Controllers
         /// </summary>
         /// <param name="customerDto">The customer data transfer object containing the new customer's details.</param>
         /// <returns>A success message if the signup was successful.</returns>
-        /// <response code="200">User added successfully.</response>
+        /// <response code="201">User added successfully.</response>
         /// <response code="400">If the customer's details are invalid or the email is already in use.</response>
         [HttpPost("signup")]
         [AllowAnonymous]
@@ -50,7 +53,7 @@ namespace hotel_backend.API.Controllers
             try
             {
                 var customer = await _customerRepository.SignUpCustomer(customerDto);
-                return Ok(new { message = "User added successfully", userId = customer.Id });
+                return Created("", new { message = "User added successfully", userId = customer.Id });
             }
             catch (InvalidOperationException ex)
             {
@@ -72,7 +75,7 @@ namespace hotel_backend.API.Controllers
         /// <response code="404">If the email does not exist in the database.</response>
         [HttpPost("login")]
         [AllowAnonymous]
-        public async Task<IActionResult> LoginCustomer([FromBody] CustomerDto customerDto)
+        public async Task<IActionResult> LoginCustomer([FromBody] CustomerLoginDto customerDto)
         {
             if (!ModelState.IsValid)
             {
@@ -152,9 +155,9 @@ namespace hotel_backend.API.Controllers
             }
 
             var passwordHasher = new PasswordHasher<Customer>();
-            customer.Name = customerDto.Name;
-            customer.Email = customerDto.Email;
-            customer.Password = passwordHasher.HashPassword(customer, customerDto.Password);
+            customerDto.Password = passwordHasher.HashPassword(customer, customerDto.Password);
+
+            customer = _mapper.Map<Customer>(customerDto);
 
             await _customerRepository.UpdateCustomerAsync(customer);
 

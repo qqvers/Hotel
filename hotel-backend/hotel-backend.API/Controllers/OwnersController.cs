@@ -1,4 +1,5 @@
-﻿using hotel_backend.API.Data;
+﻿using AutoMapper;
+using hotel_backend.API.Data;
 using hotel_backend.API.Data.Interfaces;
 using hotel_backend.API.Models.Domain;
 using hotel_backend.API.Models.DTO;
@@ -24,12 +25,14 @@ namespace hotel_backend.API.Controllers
         private readonly IOwnerRepository _ownerRepository;
         private readonly IPasswordHasher<Owner> _passwordHasher;
         private readonly SymmetricSecurityKey _loginKey;
+        private readonly IMapper _mapper;
 
-        public OwnersController(IOwnerRepository ownerRepository, IPasswordHasher<Owner> passwordHasher)
+        public OwnersController(IOwnerRepository ownerRepository, IPasswordHasher<Owner> passwordHasher, IMapper mapper)
         {
             _ownerRepository = ownerRepository;
             _passwordHasher = passwordHasher;
             _loginKey = new SymmetricSecurityKey(Encoding.ASCII.GetBytes("SecretKeySecretKeySecretKeySecretKey"));
+            _mapper = mapper;
         }
 
 
@@ -38,7 +41,7 @@ namespace hotel_backend.API.Controllers
         /// </summary>
         /// <param name="ownerDto">The data transfer object containing the owner's sign-up information.</param>
         /// <returns>A success message if the registration was successful.</returns>
-        /// <response code="200">Owner added successfully.</response>
+        /// <response code="201">Owner added successfully.</response>
         /// <response code="400">If the owner's details are invalid or the email is already in use.</response>
         [HttpPost("signup")]
         [AllowAnonymous]
@@ -52,7 +55,7 @@ namespace hotel_backend.API.Controllers
             try
             {
                 var owner = await _ownerRepository.SignUpOwnerAsync(ownerDto);
-                return Ok("Owner added successfully");
+                return Created("", new { message = "Owner added successfully", userId = owner.Id });
             }
             catch (InvalidOperationException ex)
             {
@@ -71,7 +74,7 @@ namespace hotel_backend.API.Controllers
         /// <response code="404">If the email does not exist in the database.</response>
         [HttpPost("login")]
         [AllowAnonymous]
-        public async Task<IActionResult> Login([FromBody] OwnerDto ownerDto)
+        public async Task<IActionResult> Login([FromBody] OwnerLoginDto ownerDto)
         {
             var owner = await _ownerRepository.AuthenticateOwnerAsync(ownerDto.Email, ownerDto.Password);
             if (owner == null)
@@ -138,9 +141,8 @@ namespace hotel_backend.API.Controllers
                 return BadRequest("Email already in use by another owner");
             }
 
-            owner.Name = updateOwnerDto.Name;
-            owner.Email = updateOwnerDto.Email;
-            owner.Password = _passwordHasher.HashPassword(owner, updateOwnerDto.Password);
+            updateOwnerDto.Password = _passwordHasher.HashPassword(owner, updateOwnerDto.Password);
+            owner = _mapper.Map<Owner>(updateOwnerDto);
 
             await _ownerRepository.UpdateOwnerAsync(owner);
 

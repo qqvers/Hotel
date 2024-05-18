@@ -1,4 +1,5 @@
-﻿using hotel_backend.API.Models.Domain;
+﻿using AutoMapper;
+using hotel_backend.API.Models.Domain;
 using hotel_backend.API.Models.DTO;
 using Microsoft.EntityFrameworkCore;
 
@@ -7,10 +8,12 @@ namespace hotel_backend.API.Data.Interfaces
     public class RoomRepository : IRoomRepository
     {
         private readonly HotelDbContext _context;
+        private readonly IMapper _mapper;
 
-        public RoomRepository(HotelDbContext context)
+        public RoomRepository(HotelDbContext context, IMapper mapper)
         {
             _context = context;
+            _mapper = mapper;
         }
 
         public async Task<IEnumerable<Room>> GetAllRoomsAsync()
@@ -25,12 +28,8 @@ namespace hotel_backend.API.Data.Interfaces
 
         public async Task<Room> AddRoomAsync(RoomDto roomDto)
         {
-            var room = new Room
-            {
-                Name = roomDto.Name,
-                Available = roomDto.Available,
-                OwnerId = roomDto.OwnerId
-            };
+
+            var room = _mapper.Map<Room>(roomDto);
 
             _context.Rooms.Add(room);
             await _context.SaveChangesAsync();
@@ -43,9 +42,7 @@ namespace hotel_backend.API.Data.Interfaces
             if (room == null)
                 return false;
 
-            room.Name = roomDto.Name;
-            room.Available = roomDto.Available;
-            room.OwnerId = roomDto.OwnerId;
+            room = _mapper.Map<Room>(roomDto);
 
             _context.Rooms.Update(room);
             await _context.SaveChangesAsync();
